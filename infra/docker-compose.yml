@@ -1,0 +1,180 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: biteme-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - biteme-network
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7.2-alpine
+    container_name: biteme-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - biteme-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: biteme-auth-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - AUTH_DB_URI=mongodb://admin:password123@mongodb:27017/biteme_auth?authSource=admin
+      - JWT_SECRET=your_super_secret_jwt_key_change_in_production
+      - AUTH_SERVICE_PORT=3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - biteme-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Meals Service
+  meals-service:
+    build:
+      context: ./services/meals-service
+      dockerfile: Dockerfile
+    container_name: biteme-meals-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MEALS_DB_URI=mongodb://admin:password123@mongodb:27017/biteme_meals?authSource=admin
+      - JWT_SECRET=your_super_secret_jwt_key_change_in_production
+      - MEALS_SERVICE_PORT=3002
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - biteme-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Parser Service
+  ai-parser-service:
+    build:
+      context: ./services/ai-parser-service
+      dockerfile: Dockerfile
+    container_name: biteme-ai-parser-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - AI_SERVICE_PORT=3003
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "3003:3003"
+    networks:
+      - biteme-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Gateway
+  gateway-api:
+    build:
+      context: ./services/gateway-api
+      dockerfile: Dockerfile
+    container_name: biteme-gateway-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - GATEWAY_PORT=3000
+      - JWT_SECRET=your_super_secret_jwt_key_change_in_production
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - MEALS_SERVICE_URL=http://meals-service:3002
+      - AI_SERVICE_URL=http://ai-parser-service:3003
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - meals-service
+      - ai-parser-service
+      - redis
+    networks:
+      - biteme-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Client (Next.js)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: biteme-client
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
+    ports:
+      - "3001:3000"
+    depends_on:
+      - gateway-api
+    networks:
+      - biteme-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: biteme-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - gateway-api
+      - client
+    networks:
+      - biteme-network
+
+# Volumes for persistent data
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Networks
+networks:
+  biteme-network:
+    driver: bridge
