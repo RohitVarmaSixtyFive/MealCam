@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { authService } from '../services/auth'; 
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,19 +19,19 @@ export default function Login() {
     setError('');
 
     try {
-      // TODO: Implement login logic here
-      // const response = await login({ email, password });
-      // localStorage.setItem('token', response.token);
-      // router.push('/dashboard');
+      const response = await authService.login({ email, password });
       
-      // Placeholder for development
-      console.log('Login attempt:', { email, password });
-      setTimeout(() => {
-        setIsLoading(false);
-        router.push('/dashboard');
-      }, 1000);
-    } catch (err) {
-      setError('Invalid email or password');
+      // Store token and user info
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      console.log('Login successful:', response);
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid email or password');
       setIsLoading(false);
     }
   };
