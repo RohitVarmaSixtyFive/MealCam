@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -14,20 +16,21 @@ const authMiddleware = require('./src/middleware/auth');
 const app = express();
 
 // Security and performance middleware
-app.use(helmet());
-app.use(compression());
-app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || 'http://localhost:3000',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// app.use(helmet());
+// app.use(compression());
+// app.use(cors({
+//   // origin: [
+//   //   process.env.CLIENT_URL || 'http://localhost:3000',
+//   //   'http://localhost:3000',
+//   //   'http://localhost:3001',
+//   //   'http://127.0.0.1:3000',
+//   //   'http://127.0.0.1:3001'
+//   // ],
+//   origin: ['*'],
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -59,10 +62,7 @@ app.get('/health', (req, res) => {
 
 // API routes with service proxying
 app.use('/api/auth', authRoutes);
-app.use('/api/meals', authMiddleware, mealsRoutes);
-app.use('/api/ai', authMiddleware, aiRoutes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({

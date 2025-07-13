@@ -16,14 +16,15 @@ connectDB();
 
 // CORS middleware
 app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:4000',
-    'http://10.2.143.96:3000',
-    'http://10.2.143.96:4000',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:4000'
-  ],
+  // origin: [
+  //   'http://localhost:3000', 
+  //   'http://localhost:4000',
+  //   'http://10.2.143.96:3000',
+  //   'http://10.2.143.96:4000',
+  //   'http://127.0.0.1:3000',
+  //   'http://127.0.0.1:4000'
+  // ],
+  origin: '*', // Allow all origins for development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -56,7 +57,7 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/', authRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
@@ -66,7 +67,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.AUTH_SERVICE_PORT || 3001;
 
 // Update the listen method
 app.listen(PORT, '0.0.0.0', () => {
