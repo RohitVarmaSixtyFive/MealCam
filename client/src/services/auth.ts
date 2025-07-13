@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export interface LoginRequest {
   email: string;
@@ -18,6 +18,31 @@ export interface LoginResponse {
   };
 }
 
+export interface SignupRequest {
+  name: string;        
+  email: string;
+  password: string;
+  role?: string;       
+}
+
+export interface SignupResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    lastLogin: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  _id: string;
+  username: string; // Assuming username is part of the user object
+}
+
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -32,6 +57,30 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error(data.message || 'Login failed');
+    }
+
+    return data;
+  },
+
+  async logout(): Promise<void> {
+    // Clear local storage or perform any necessary cleanup
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  },
+
+  async signup(credentials: SignupRequest): Promise<SignupResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Signup failed');
     }
 
     return data;

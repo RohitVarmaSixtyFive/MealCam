@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Camera, Plus, TrendingUp, Target, Calendar } from 'lucide-react';
+import { authApi } from '@/services/api';
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [dailyStats] = useState({
     date: new Date().toISOString().split('T')[0],
     meals: 3,
@@ -27,10 +31,34 @@ export default function Dashboard() {
     fat: Math.round((dailyStats.totals.fat / dailyStats.goals.dailyFatGoal) * 100)
   };
 
+  useEffect(() => {
+    // Only run in browser
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // No token, redirect immediately
+      router.replace('/login');
+      return;
+    }
+    // Validate token with backend via gateway
+    authApi.getMe()
+      .then(() => {
+        setLoading(false);
+      })
+      .catch(() => {
+        // Invalid or expired token: clear and redirect
+        localStorage.removeItem('token');
+        router.replace('/login');
+      });
+  }, [router]);
+
+  // Redirect guard: show nothing while checking token
+  if (loading) return null;
+
   return (
     <>
       <Head>
-        <title>Dashboard - BiteMe</title>
+        <title>Dashboard - TrackEat</title>
         <meta name="description" content="Your nutrition tracking dashboard" />
       </Head>
 

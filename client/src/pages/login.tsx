@@ -131,7 +131,7 @@ export default function Login() {
                     Remember me
                   </label>
                 </div>
-
+                {/* yet to be implemented */}
                 <div className="text-sm">
                   <Link href="/forgot-password" className="text-primary-600 hover:text-primary-500">
                     Forgot your password?

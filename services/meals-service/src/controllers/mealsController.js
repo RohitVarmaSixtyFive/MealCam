@@ -37,13 +37,23 @@
 const Meal = require('../models/Meal');
 const { validationResult } = require('express-validator');
 
+
 // TODO: Implement full meal controller logic
 const createMeal = async (req, res, next) => {
   // Placeholder implementation
-  res.status(501).json({
-    success: false,
-    message: 'Meal creation endpoint not yet implemented'
-  });
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: errors.array().map(error => error.msg)
+    });
+  }
+
+  const { userId, mealType, date, ingredients, nutrition, tags } = req.body;
+
+
+
 };
 
 const getMeals = async (req, res, next) => {

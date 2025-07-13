@@ -15,10 +15,23 @@ const nextConfig = {
         source: '/api/:path*',
         destination: process.env.NODE_ENV === 'production' 
           ? 'https://your-api-domain.com/api/:path*'
-          : 'http://localhost:5000/api/:path*'
+          : 'http://localhost:3001/api/:path*'
       }
     ];
-  }
-};
-
-module.exports = nextConfig;
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ]
+  },
+}
+console.log('Next.js configuration loaded:');
+module.exports = nextConfig

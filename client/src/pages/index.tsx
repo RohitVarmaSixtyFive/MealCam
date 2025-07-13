@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>BiteMe - AI-Powered Nutritional Tracking</title>
+        <title>TrackEat - AI-Powered Nutritional Tracking</title>
         <meta name="description" content="Track your nutrition with AI-powered meal recognition. Upload a photo and get instant nutritional breakdown." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
