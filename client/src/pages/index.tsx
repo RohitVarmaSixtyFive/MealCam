@@ -1,8 +1,21 @@
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { Camera, TrendingUp, Clock, Users } from 'lucide-react';
+import { UtensilsCrossed, TrendingUp, Camera, Target, ArrowRight, Clock } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        router.replace('/dashboard');
+      }
+    }
+  }, [router]);
   return (
     <>
       <Head>
@@ -82,8 +95,8 @@ export default function Home() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-accent-600" />
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Target className="w-8 h-8 text-purple-600" />
                 </div>
                 <h4 className="text-xl font-semibold text-gray-900 mb-2">Fast & Easy</h4>
                 <p className="text-gray-600">

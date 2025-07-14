@@ -52,6 +52,34 @@ export interface FoodItem {
 
 export type FoodUnit = 'g' | 'kg' | 'oz' | 'lb' | 'cup' | 'tbsp' | 'tsp' | 'ml' | 'l' | 'piece' | 'slice';
 
+// Photo Analysis types
+export interface PhotoAnalysisResult {
+  mealTitle: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  description: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
+  confidence: number;
+}
+
+export interface PhotoUploadResponse {
+  success: boolean;
+  message: string;
+  data: {
+    analysis?: PhotoAnalysisResult;
+    nutrition?: NutritionTotals;
+    imageInfo: {
+      filename: string;
+      size: number;
+      mimetype: string;
+    };
+    error?: string;
+  };
+}
+
 export interface NutritionTotals {
   calories: number;
   protein: number;

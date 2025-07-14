@@ -1,11 +1,18 @@
-import { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Plus, Trash2, Camera } from 'lucide-react';
 import { CreateMealRequest } from '@/types';
 import { mealsApi } from '@/services/api';
 
 interface AddMealModalProps {
   onClose: () => void;
   onSubmit: (mealData: CreateMealRequest) => Promise<void>;
+  photoAnalysisData?: {
+    title: string;
+    description: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    items: Array<{ name: string; quantity: number; unit: string }>;
+    nutrition?: any;
+  } | null;
 }
 
 interface MealItem {
@@ -14,13 +21,32 @@ interface MealItem {
   unit?: string;
 }
 
-export default function AddMealModal({ onClose, onSubmit }: AddMealModalProps) {
+export default function AddMealModal({ onClose, onSubmit, photoAnalysisData }: AddMealModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
   const [items, setItems] = useState<MealItem[]>([{ name: '', quantity: 1, unit: 'piece' }]);
   const [nutritionPreview, setNutritionPreview] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [isFromPhoto, setIsFromPhoto] = useState(false);
+
+  // Pre-fill form with photo analysis data if available
+  useEffect(() => {
+    if (photoAnalysisData) {
+      setTitle(photoAnalysisData.title);
+      setDescription(photoAnalysisData.description);
+      setMealType(photoAnalysisData.mealType);
+      setItems(photoAnalysisData.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit || 'piece'
+      })));
+      if (photoAnalysisData.nutrition) {
+        setNutritionPreview({ nutrition: photoAnalysisData.nutrition });
+      }
+      setIsFromPhoto(true);
+    }
+  }, [photoAnalysisData]);
 
   const addItem = () => {
     setItems([...items, { name: '', quantity: 1, unit: 'piece' }]);
@@ -90,7 +116,15 @@ export default function AddMealModal({ onClose, onSubmit }: AddMealModalProps) {
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Add New Meal</h2>
+            <div>
+              <h2 className="text-xl font-semibold">Add New Meal</h2>
+              {isFromPhoto && (
+                <p className="text-sm text-blue-600 flex items-center mt-1">
+                  <Camera className="w-4 h-4 mr-1" />
+                  Data from photo analysis - please review and confirm
+                </p>
+              )}
+            </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <X className="w-6 h-6" />
             </button>

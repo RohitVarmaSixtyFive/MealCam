@@ -21,7 +21,10 @@ const getDailyNutrition = async (req, res, next) => {
       calories: 0,
       fat: 0,
       protein: 0,
-      carbs: 0
+      carbs: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0
     };
 
     let mealsByType = {
@@ -36,6 +39,9 @@ const getDailyNutrition = async (req, res, next) => {
       totalNutrition.fat += meal.nutrition.fat || 0;
       totalNutrition.protein += meal.nutrition.protein || 0;
       totalNutrition.carbs += meal.nutrition.carbs || 0;
+      totalNutrition.fiber += meal.nutrition.fiber || 0;
+      totalNutrition.sugar += meal.nutrition.sugar || 0;
+      totalNutrition.sodium += meal.nutrition.sodium || 0;
 
       mealsByType[meal.mealType].push(meal);
     });
@@ -90,6 +96,9 @@ const getWeeklyNutrition = async (req, res, next) => {
           fat: 0,
           protein: 0,
           carbs: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
           mealCount: 0
         };
       }
@@ -98,6 +107,9 @@ const getWeeklyNutrition = async (req, res, next) => {
       dailyNutrition[dateKey].fat += meal.nutrition.fat || 0;
       dailyNutrition[dateKey].protein += meal.nutrition.protein || 0;
       dailyNutrition[dateKey].carbs += meal.nutrition.carbs || 0;
+      dailyNutrition[dateKey].fiber += meal.nutrition.fiber || 0;
+      dailyNutrition[dateKey].sugar += meal.nutrition.sugar || 0;
+      dailyNutrition[dateKey].sodium += meal.nutrition.sodium || 0;
       dailyNutrition[dateKey].mealCount += 1;
     });
 

@@ -7,7 +7,8 @@ import {
   ApiResponse,
   Meal,
   CreateMealRequest,
-  NutritionTotals
+  NutritionTotals,
+  PhotoUploadResponse
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -100,12 +101,8 @@ export const mealsApi = {
     return response.data;
   },
 
-  // Upload meal photo (temporary)
-  uploadMealPhoto: async (imageFile: File): Promise<{
-    success: boolean;
-    data: { filename: string; size: number; mimetype: string; note: string };
-    message: string;
-  }> => {
+  // Upload meal photo and analyze with AI
+  uploadMealPhoto: async (imageFile: File): Promise<PhotoUploadResponse> => {
     const formData = new FormData();
     formData.append('image', imageFile);
     

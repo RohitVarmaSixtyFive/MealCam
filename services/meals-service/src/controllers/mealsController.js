@@ -1,6 +1,7 @@
 const Meal = require('../models/Meal');
 const { validationResult } = require('express-validator');
 const multer = require('multer');
+const geminiNutritionService = require('../services/geminiNutritionService');
 
 // Configure multer for image uploads (in-memory storage)
 const storage = multer.memoryStorage();
@@ -18,30 +19,42 @@ const upload = multer({
   }
 });
 
-// Helper function to calculate nutrition based on quantity
-const calculateNutrition = (items) => {
-  let totalNutrition = {
-    calories: 0,
-    fat: 0,
-    protein: 0,
-    carbs: 0
-  };
+// Helper function to calculate nutrition using Gemini API
+const calculateNutrition = async (items) => {
+  try {
+    // Use Gemini API for accurate nutrition analysis
+    const nutrition = await geminiNutritionService.analyzeNutrition(items);
+    return nutrition;
+  } catch (error) {
+    console.error('Error calculating nutrition with Gemini:', error);
+    
+    // Fallback to basic calculation if Gemini fails
+    let totalNutrition = {
+      calories: 0,
+      fat: 0,
+      protein: 0,
+      carbs: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0
+    };
 
-  items.forEach(item => {
-    const quantity = item.quantity || 1;
-    // Base nutrition per 1 unit (hardcoded as requested)
-    const baseCalories = 250;
-    const baseFat = 20;
-    const baseProtein = 20;
-    const baseCarbs = 20;
+    items.forEach(item => {
+      const quantity = item.quantity || 1;
+      // Base nutrition per 1 unit (fallback values)
+      const baseCalories = 150;
+      const baseFat = 8;
+      const baseProtein = 12;
+      const baseCarbs = 15;
 
-    totalNutrition.calories += baseCalories * quantity;
-    totalNutrition.fat += baseFat * quantity;
-    totalNutrition.protein += baseProtein * quantity;
-    totalNutrition.carbs += baseCarbs * quantity;
-  });
+      totalNutrition.calories += baseCalories * quantity;
+      totalNutrition.fat += baseFat * quantity;
+      totalNutrition.protein += baseProtein * quantity;
+      totalNutrition.carbs += baseCarbs * quantity;
+    });
 
-  return totalNutrition;
+    return totalNutrition;
+  }
 };
 
 // Create meal with multiple items (name and quantity)
@@ -77,8 +90,8 @@ const createMeal = async (req, res, next) => {
       }
     }
 
-    // Calculate nutrition based on items
-    const nutrition = calculateNutrition(items);
+    // Calculate nutrition based on items using Gemini API
+    const nutrition = await calculateNutrition(items);
 
     // Format ingredients for database
     const ingredients = items.map(item => ({
@@ -111,7 +124,7 @@ const createMeal = async (req, res, next) => {
   }
 };
 
-// Upload meal photo (temporary, not saved to database)
+// Upload meal photo and analyze with Gemini
 const uploadMealPhoto = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -121,21 +134,73 @@ const uploadMealPhoto = async (req, res, next) => {
       });
     }
 
-    // For now, just return success with file info (not saving to DB as requested)
+    console.log('Processing uploaded image:', {
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+
+    // Analyze the image with Gemini to extract food items
+    const analysisResult = await geminiNutritionService.analyzeFoodImage(
+      req.file.buffer,
+      req.file.mimetype
+    );
+
+    // Calculate nutrition for the identified items
+    const nutritionData = await calculateNutrition(analysisResult.items);
+
     res.status(200).json({
       success: true,
-      message: 'Image uploaded successfully (temporary)',
+      message: 'Image analyzed successfully',
       data: {
-        filename: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
-        note: 'Image processed but not saved to database as requested'
+        analysis: analysisResult,
+        nutrition: nutritionData,
+        imageInfo: {
+          filename: req.file.originalname,
+          size: req.file.size,
+          mimetype: req.file.mimetype
+        }
       }
     });
 
   } catch (error) {
-    console.error('Upload photo error:', error);
-    next(error);
+    console.error('Upload and analyze photo error:', error);
+    
+    // Return a fallback response if analysis fails
+    res.status(200).json({
+      success: true,
+      message: 'Image uploaded but analysis failed. Please add items manually.',
+      data: {
+        analysis: {
+          mealTitle: 'Meal from Photo',
+          mealType: 'lunch',
+          description: 'Please identify and add food items manually.',
+          items: [
+            {
+              name: '',
+              quantity: 1,
+              unit: 'piece'
+            }
+          ],
+          confidence: 0
+        },
+        nutrition: {
+          calories: 0,
+          fat: 0,
+          protein: 0,
+          carbs: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0
+        },
+        imageInfo: {
+          filename: req.file?.originalname || 'unknown',
+          size: req.file?.size || 0,
+          mimetype: req.file?.mimetype || 'image/jpeg'
+        },
+        error: 'Analysis failed - please add items manually'
+      }
+    });
   }
 };
 
@@ -231,7 +296,7 @@ const getNutritionDetails = async (req, res, next) => {
       }
     }
 
-    const nutrition = calculateNutrition(items);
+    const nutrition = await calculateNutrition(items);
 
     res.status(200).json({
       success: true,
@@ -239,13 +304,13 @@ const getNutritionDetails = async (req, res, next) => {
       data: {
         items,
         nutrition,
-        breakdown: items.map(item => ({
+        breakdown: nutrition.breakdown || items.map(item => ({
           name: item.name,
           quantity: item.quantity,
-          calories: 250 * item.quantity,
-          fat: 20 * item.quantity,
-          protein: 20 * item.quantity,
-          carbs: 20 * item.quantity
+          calories: Math.round((nutrition.calories / items.length) * (item.quantity / items.reduce((sum, i) => sum + i.quantity, 0))),
+          fat: Math.round((nutrition.fat / items.length) * (item.quantity / items.reduce((sum, i) => sum + i.quantity, 0)) * 10) / 10,
+          protein: Math.round((nutrition.protein / items.length) * (item.quantity / items.reduce((sum, i) => sum + i.quantity, 0)) * 10) / 10,
+          carbs: Math.round((nutrition.carbs / items.length) * (item.quantity / items.reduce((sum, i) => sum + i.quantity, 0)) * 10) / 10
         }))
       }
     });
