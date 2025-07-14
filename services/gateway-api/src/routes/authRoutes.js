@@ -2,7 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const router = express.Router();
 
-// Auth service proxy configuration
+
 const authServiceProxy = createProxyMiddleware({
   target: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
   changeOrigin: true,
@@ -13,9 +13,7 @@ const authServiceProxy = createProxyMiddleware({
   onProxyReq: (proxyReq, req, res) => {
     console.log(`Proxying ${req.method} ${req.originalUrl} -> ${proxyReq.path}`);
     console.log('Request body:', req.body);
-    
-    // Fix: Don't manually write the body - let the proxy handle it
-    // The middleware will automatically forward the parsed body
+
     if (req.body) {
       proxyReq.setHeader('Content-Type', 'application/json');
     }
