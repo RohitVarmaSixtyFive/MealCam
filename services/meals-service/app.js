@@ -14,18 +14,18 @@ const app = express();
 connectDB();
 
 // // Security middleware
-// app.use(helmet());
-// app.use(cors({
-//   origin: process.env.CLIENT_URL || 'http://localhost:3000',
-//   credentials: true
-// }));
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
 
-// // Rate limiting
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 200 // higher limit for meals service due to image uploads
-// });
-// app.use(limiter);
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200 // higher limit for meals service due to image uploads
+});
+app.use(limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' })); // Higher limit for images
