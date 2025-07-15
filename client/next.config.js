@@ -9,16 +9,19 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react']
   },
-  async rewrites() {
+  async headers() {
     return [
       {
-        source: '/api/:path*',
-        destination: process.env.NODE_ENV === 'production' 
-          ? 'https://your-api-domain.com/api/:path*'
-          : 'http://localhost:5000/api/:path*'
-      }
-    ];
-  }
-};
-
-module.exports = nextConfig;
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ]
+  },
+}
+console.log('Next.js configuration loaded:');
+module.exports = nextConfig

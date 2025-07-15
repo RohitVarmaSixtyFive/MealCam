@@ -1,17 +1,3 @@
-/*
- * PLACEHOLDER: Auth Middleware for Meals Service
- * 
- * This middleware should verify JWT tokens sent from the API Gateway
- * and extract user information for meal operations.
- * 
- * Implementation needed:
- * - JWT token verification
- * - User ID extraction
- * - Role-based access control
- * - Integration with auth service for token validation
- * - Error handling for invalid/expired tokens
- */
-
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = async (req, res, next) => {
@@ -25,14 +11,37 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // TODO: Verify token with auth service or shared secret
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    // Verify token with JWT secret
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+    
+    // Extract user information from token
+    req.user = {
+      id: decoded.id || decoded.userId,
+      email: decoded.email,
+      name: decoded.name
+    };
+    
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error.message);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has expired'
+      });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format'
+      });
+    }
+    
     return res.status(401).json({
       success: false,
-      message: 'Invalid token'
+      message: 'Token verification failed'
     });
   }
 };

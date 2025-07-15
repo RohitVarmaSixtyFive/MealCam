@@ -5,7 +5,8 @@ import { useRouter } from 'next/router';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { authService } from '../services/auth'; 
 
-export default function Login() {
+export default function SignUp() {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,18 +20,18 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await authService.login({ email, password });
-      
+      const response = await authService.signup({name: username, email, password});
+
       // Store token and user info
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
-      
-      console.log('Login successful:', response);
-      
+
+      console.log('Signup successful:', response);
+
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Signup error:', err);
       setError(err.message || 'Invalid email or password');
       setIsLoading(false);
     }
@@ -39,8 +40,8 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>Login - BiteMe</title>
-        <meta name="description" content="Login to your BiteMe account" />
+        <title>Sign Up - BiteMe</title>
+        <meta name="description" content="Sign up for TrackEat account" />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -55,9 +56,9 @@ export default function Login() {
               Welcome back
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link href="/signup" className="text-primary-600 hover:text-primary-500 font-medium">
-                Sign up here
+              Already have an account?{' '}
+              <Link href="/login" className="text-primary-600 hover:text-primary-500 font-medium">
+                Log In here
               </Link>
             </p>
           </div>
@@ -69,6 +70,25 @@ export default function Login() {
                   <div className="text-sm text-red-700">{error}</div>
                 </div>
               )}
+
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  UserName
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    required
+                    className="input"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+              </div>
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -131,7 +151,7 @@ export default function Login() {
                     Remember me
                   </label>
                 </div>
-                {/* yet to be implemented */}
+
                 <div className="text-sm">
                   <Link href="/forgot-password" className="text-primary-600 hover:text-primary-500">
                     Forgot your password?
@@ -151,7 +171,7 @@ export default function Login() {
                       Signing in...
                     </div>
                   ) : (
-                    'Sign in'
+                    'Sign up'
                   )}
                 </button>
               </div>

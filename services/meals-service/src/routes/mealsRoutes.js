@@ -9,15 +9,13 @@ router.use(authMiddleware);
 // Meal CRUD operations
 router.get('/', mealsController.getMeals);
 router.post('/', mealsController.createMeal);
+router.get('/:id', mealsController.getMealById);
+router.delete('/:id', mealsController.deleteMeal);
 
-// TODO: Add remaining routes
-// router.get('/:id', mealsController.getMealById);
-// router.put('/:id', mealsController.updateMeal);
-// router.delete('/:id', mealsController.deleteMeal);
-// router.post('/upload', mealsController.uploadMealImage);
-// router.get('/history/:userId', mealsController.getUserMealHistory);
-// router.get('/search', mealsController.searchMeals);
-// router.post('/:id/like', mealsController.likeMeal);
-// router.get('/public', mealsController.getPublicMeals);
+// Image upload endpoint (temporary, not saved to DB)
+router.post('/upload-photo', mealsController.upload.single('image'), mealsController.uploadMealPhoto);
+
+// Nutrition calculation endpoint
+router.post('/nutrition', mealsController.getNutritionDetails);
 
 module.exports = router;

@@ -14,7 +14,7 @@ const registerUser = async (req, res, next) => {
         message: errors.array().map(error => error.msg)
       });
     }
-
+    
     const { name, email, password, role } = req.body;
 
     // Check if user already exists
@@ -54,7 +54,7 @@ const registerUser = async (req, res, next) => {
 
     await user.save();
 
-    // Generate JWT
+    // Generate JWT, 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,

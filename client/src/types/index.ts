@@ -52,6 +52,34 @@ export interface FoodItem {
 
 export type FoodUnit = 'g' | 'kg' | 'oz' | 'lb' | 'cup' | 'tbsp' | 'tsp' | 'ml' | 'l' | 'piece' | 'slice';
 
+// Photo Analysis types
+export interface PhotoAnalysisResult {
+  mealTitle: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  description: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
+  confidence: number;
+}
+
+export interface PhotoUploadResponse {
+  success: boolean;
+  message: string;
+  data: {
+    analysis?: PhotoAnalysisResult;
+    nutrition?: NutritionTotals;
+    imageInfo: {
+      filename: string;
+      size: number;
+      mimetype: string;
+    };
+    error?: string;
+  };
+}
+
 export interface NutritionTotals {
   calories: number;
   protein: number;
@@ -62,28 +90,35 @@ export interface NutritionTotals {
   sodium?: number;
 }
 
-// Meal types
+// Meal types (updated to match backend)
 export interface Meal {
   _id: string;
   userId: string;
-  mealTitle: MealType;
-  timestamp: string;
-  foodItems: FoodItem[];
-  totals: NutritionTotals;
-  imageUrl?: string;
-  notes?: string;
+  title: string;
+  description?: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  date: string;
+  nutrition: NutritionTotals;
+  ingredients: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
+  image?: {
+    url?: string;
+    publicId?: string;
+    originalName?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
 
-export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Other';
-
 export interface CreateMealRequest {
-  mealTitle: MealType;
-  timestamp?: string;
-  foodItems: FoodItem[];
-  notes?: string;
-  imageUrl?: string;
+  title: string;
+  description?: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  items: Array<{ name: string; quantity: number; unit?: string }>;
+  date?: string;
 }
 
 // Saved Food types
@@ -102,6 +137,8 @@ export interface SavedFood {
 }
 
 export type SavedFoodCategory = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Pre-workout' | 'Post-workout' | 'Other';
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 // AI Analysis types
 export interface AIAnalysisResult {

@@ -1,67 +1,119 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { Camera, Plus, TrendingUp, Target, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, TrendingUp, Target, Calendar, UtensilsCrossed } from 'lucide-react';
+import { authApi, nutritionApi } from '@/services/api';
+import ProtectedLayout from '@/components/ProtectedLayout';
 
 export default function Dashboard() {
-  const [dailyStats] = useState({
-    date: new Date().toISOString().split('T')[0],
-    meals: 3,
-    totals: {
-      calories: 1450,
-      protein: 98,
-      carbs: 165,
-      fat: 48
-    },
-    goals: {
-      dailyCalorieGoal: 2000,
-      dailyProteinGoal: 150,
-      dailyCarbGoal: 200,
-      dailyFatGoal: 67
-    }
+  const [loading, setLoading] = useState(true);
+  const [dailyStats, setDailyStats] = useState<any>(null);
+  const [weeklyStats, setWeeklyStats] = useState<any>(null);
+
+  const [goals, setGoals] = useState({
+    dailyCalorieGoal: 2000,
+    dailyProteinGoal: 150,
+    dailyCarbGoal: 200,
+    dailyFatGoal: 67
   });
 
-  const progressPercentage = {
-    calories: Math.round((dailyStats.totals.calories / dailyStats.goals.dailyCalorieGoal) * 100),
-    protein: Math.round((dailyStats.totals.protein / dailyStats.goals.dailyProteinGoal) * 100),
-    carbs: Math.round((dailyStats.totals.carbs / dailyStats.goals.dailyCarbGoal) * 100),
-    fat: Math.round((dailyStats.totals.fat / dailyStats.goals.dailyFatGoal) * 100)
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [userResponse, dailyResponse, weeklyResponse] = await Promise.all([
+        authApi.getMe(),
+        nutritionApi.getDailyNutrition(),
+        nutritionApi.getWeeklyNutrition()
+      ]);
+
+      setDailyStats(dailyResponse.data);
+      setWeeklyStats(weeklyResponse.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      setLoading(false);
+    }
   };
 
+  // Calculate progress percentages
+  const progressPercentage = dailyStats ? {
+    calories: Math.round((dailyStats.totalNutrition.calories / goals.dailyCalorieGoal) * 100),
+    protein: Math.round((dailyStats.totalNutrition.protein / goals.dailyProteinGoal) * 100),
+    carbs: Math.round((dailyStats.totalNutrition.carbs / goals.dailyCarbGoal) * 100),
+    fat: Math.round((dailyStats.totalNutrition.fat / goals.dailyFatGoal) * 100)
+  } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+  // Redirect guard: show loading while checking token
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg">Loading dashboard...</div>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <ProtectedLayout>
       <Head>
         <title>Dashboard - BiteMe</title>
         <meta name="description" content="Your nutrition tracking dashboard" />
       </Head>
 
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <h1 className="text-2xl font-display font-bold text-gray-900">Dashboard</h1>
-              <button className="btn btn-primary">
-                <Plus className="w-5 h-5 mr-2" />
-                Add Meal
-              </button>
-            </div>
-          </div>
-        </header>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h1>
+          <p className="text-gray-600">Here's your nutrition overview for today.</p>
+        </div>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Link href="/meals" className="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-lg shadow transition-colors">
+            <div className="flex items-center">
+              <Plus className="w-8 h-8 mr-3" />
+              <div>
+                <h3 className="text-lg font-semibold">Add Meal</h3>
+                <p className="text-blue-100">Log your latest meal</p>
+              </div>
+            </div>
+          </Link>
+          
+          <Link href="/meals" className="bg-green-600 hover:bg-green-700 text-white p-6 rounded-lg shadow transition-colors">
+            <div className="flex items-center">
+              <UtensilsCrossed className="w-8 h-8 mr-3" />
+              <div>
+                <h3 className="text-lg font-semibold">View Meals</h3>
+                <p className="text-green-100">See all your meals</p>
+              </div>
+            </div>
+          </Link>
+          
+          <Link href="/progress" className="bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-lg shadow transition-colors">
+            <div className="flex items-center">
+              <TrendingUp className="w-8 h-8 mr-3" />
+              <div>
+                <h3 className="text-lg font-semibold">View Progress</h3>
+                <p className="text-purple-100">Track your trends</p>
+              </div>
+            </div>
+          </Link>
+        </div>
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="card text-center">
-              <div className="text-2xl font-bold text-primary-600">
-                {dailyStats.totals.calories}
+            <div className="bg-white overflow-hidden shadow rounded-lg p-6 text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {dailyStats?.totalNutrition?.calories || 0}
               </div>
               <div className="text-sm text-gray-600">
-                / {dailyStats.goals.dailyCalorieGoal} cal
+                / {goals.dailyCalorieGoal} cal
               </div>
               <div className="mt-2">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-primary-600 h-2 rounded-full"
+                    className="bg-blue-600 h-2 rounded-full"
                     style={{ width: `${Math.min(progressPercentage.calories, 100)}%` }}
                   ></div>
                 </div>
@@ -69,17 +121,17 @@ export default function Dashboard() {
               <div className="text-xs text-gray-500 mt-1">Calories</div>
             </div>
 
-            <div className="card text-center">
-              <div className="text-2xl font-bold text-secondary-600">
-                {dailyStats.totals.protein}g
+            <div className="bg-white overflow-hidden shadow rounded-lg p-6 text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {dailyStats?.totalNutrition?.protein || 0}g
               </div>
               <div className="text-sm text-gray-600">
-                / {dailyStats.goals.dailyProteinGoal}g
+                / {goals.dailyProteinGoal}g
               </div>
               <div className="mt-2">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-secondary-600 h-2 rounded-full"
+                    className="bg-green-600 h-2 rounded-full"
                     style={{ width: `${Math.min(progressPercentage.protein, 100)}%` }}
                   ></div>
                 </div>
@@ -87,17 +139,17 @@ export default function Dashboard() {
               <div className="text-xs text-gray-500 mt-1">Protein</div>
             </div>
 
-            <div className="card text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {dailyStats.totals.carbs}g
+            <div className="bg-white overflow-hidden shadow rounded-lg p-6 text-center">
+              <div className="text-2xl font-bold text-yellow-600">
+                {dailyStats?.totalNutrition?.carbs || 0}g
               </div>
               <div className="text-sm text-gray-600">
-                / {dailyStats.goals.dailyCarbGoal}g
+                / {goals.dailyCarbGoal}g
               </div>
               <div className="mt-2">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full"
+                    className="bg-yellow-600 h-2 rounded-full"
                     style={{ width: `${Math.min(progressPercentage.carbs, 100)}%` }}
                   ></div>
                 </div>
@@ -105,17 +157,17 @@ export default function Dashboard() {
               <div className="text-xs text-gray-500 mt-1">Carbs</div>
             </div>
 
-            <div className="card text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {dailyStats.totals.fat}g
+            <div className="bg-white overflow-hidden shadow rounded-lg p-6 text-center">
+              <div className="text-2xl font-bold text-red-600">
+                {dailyStats?.totalNutrition?.fat || 0}g
               </div>
               <div className="text-sm text-gray-600">
-                / {dailyStats.goals.dailyFatGoal}g
+                / {goals.dailyFatGoal}g
               </div>
               <div className="mt-2">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-yellow-600 h-2 rounded-full"
+                    className="bg-red-600 h-2 rounded-full"
                     style={{ width: `${Math.min(progressPercentage.fat, 100)}%` }}
                   ></div>
                 </div>
@@ -124,89 +176,37 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="card card-hover cursor-pointer">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mr-4">
-                  <Camera className="w-6 h-6 text-primary-600" />
+          {/* Recent Meals Summary */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Meals</h3>
+            {dailyStats?.totalMeals > 0 ? (
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600">
+                  You've logged {dailyStats.totalMeals} meal{dailyStats.totalMeals !== 1 ? 's' : ''} today.
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Upload Meal Photo</h3>
-                  <p className="text-sm text-gray-600">AI-powered meal recognition</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(dailyStats.mealsByType || {}).map(([type, meals]) => (
+                    <div key={type} className="text-center">
+                      <div className="text-lg font-medium text-gray-900 capitalize">{type}</div>
+                      <div className="text-sm text-gray-500">{Array.isArray(meals) ? meals.length : 0} meal{(Array.isArray(meals) ? meals.length : 0) !== 1 ? 's' : ''}</div>
+                    </div>
+                  ))}
                 </div>
+                <Link href="/meals" className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                  View all meals →
+                </Link>
               </div>
-            </div>
-
-            <div className="card card-hover cursor-pointer">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center mr-4">
-                  <Plus className="w-6 h-6 text-secondary-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Manual Entry</h3>
-                  <p className="text-sm text-gray-600">Add meals manually</p>
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-gray-500 mb-4">No meals logged today</div>
+                <Link href="/meals" className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Meal
+                </Link>
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Recent Meals */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Meals</h3>
-            <div className="space-y-4">
-              {/* Placeholder meal entries */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mr-3">
-                    <Calendar className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">Lunch</div>
-                    <div className="text-sm text-gray-600">Grilled chicken, rice, vegetables</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">650 cal</div>
-                  <div className="text-sm text-gray-600">45g protein</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center mr-3">
-                    <Calendar className="w-5 h-5 text-secondary-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">Breakfast</div>
-                    <div className="text-sm text-gray-600">Oatmeal with berries and protein powder</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">400 cal</div>
-                  <div className="text-sm text-gray-600">30g protein</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">Snack</div>
-                    <div className="text-sm text-gray-600">Greek yogurt with nuts</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">200 cal</div>
-                  <div className="text-sm text-gray-600">15g protein</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    </>
-  );
-}
+        </div>
+      </ProtectedLayout>
+    );
+  }
