@@ -57,6 +57,7 @@ export const authApi = {
 
   getMe: async (): Promise<{ user: User }> => {
     const response: AxiosResponse<{ user: User }> = await api.get('/auth/me');
+    console.log('User data:', response.data);
     return response.data;
   },
 

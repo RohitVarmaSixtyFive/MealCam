@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 
 const express = require('express');
@@ -8,6 +9,8 @@ const cors = require('cors'); // Move this import to the top
 const connectDB = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
+
+
 
 const app = express();
 

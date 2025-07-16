@@ -34,7 +34,7 @@ export default function Dashboard() {
       setLoading(false);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
