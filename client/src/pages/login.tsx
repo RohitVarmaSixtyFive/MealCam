@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { authService } from '../services/auth'; 
+import { authService } from '../services/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,6 +13,49 @@ export default function Login() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  useEffect(() => {
+    // Dynamically load Google Identity script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      // @ts-ignore
+      if (window.google) {
+        // @ts-ignore
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          callback: handleGoogleResponse,
+        });
+
+        // @ts-ignore
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signin')!,
+          { theme: 'outline', size: 'large', width: '100%' }
+        );
+      }
+    };
+  }, []);
+
+  const handleGoogleResponse = async (response: any) => {
+    try {
+      // console.log("Reached here")
+      const res = await authService.loginWithGoogle(response.credential);
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify(res.user));
+      // console.log('Google login successful:', res);
+      // console.log(res.token);
+      // console.log(localStorage.getItem('token'));
+      console.log(localStorage.getItem('user'));
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Google login failed:', err.message);
+      setError('Google login failed. Try again.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -20,14 +63,9 @@ export default function Login() {
 
     try {
       const response = await authService.login({ email, password });
-      
-      // Store token and user info
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
-      
-      console.log('Login successful:', response);
-      
-      // Redirect to dashboard
+      // console.log(localStorage.getItem('user'));
       router.push('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
@@ -55,7 +93,7 @@ export default function Login() {
               Welcome back
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="text-primary-600 hover:text-primary-500 font-medium">
                 Sign up here
               </Link>
@@ -131,7 +169,6 @@ export default function Login() {
                     Remember me
                   </label>
                 </div>
-                {/* yet to be implemented */}
                 <div className="text-sm">
                   <Link href="/forgot-password" className="text-primary-600 hover:text-primary-500">
                     Forgot your password?
@@ -156,6 +193,11 @@ export default function Login() {
                 </button>
               </div>
             </form>
+
+            {/* Google Sign-In Button Container */}
+            <div className="mt-4">
+              <div id="google-signin" className="flex justify-center"></div>
+            </div>
           </div>
         </div>
       </div>
