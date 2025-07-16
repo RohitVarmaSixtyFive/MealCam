@@ -49,9 +49,7 @@ export default function Login() {
       // console.log(res.token);
       // console.log(localStorage.getItem('token'));
       console.log(localStorage.getItem('user'));
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 10000)
+      router.push('/dashboard');
     } catch (err: any) {
       console.error('Google login failed:', err.message);
       setError('Google login failed. Try again.');
