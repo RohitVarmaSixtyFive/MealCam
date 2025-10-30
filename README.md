@@ -1,6 +1,6 @@
-# BiteMe - AI-Powered Nutritional Tracking
+# MealCam - AI-Powered Nutritional Tracking
 
-BiteMe is a mobile web application that simplifies nutritional tracking by allowing users to log meals with a single photo. Using AI-powered meal recognition, users can upload an image of their meal and receive an editable nutritional breakdown.
+MealCam is a mobile web application that simplifies nutritional tracking by allowing users to log meals with a single photo. Using AI-powered meal recognition, users can upload an image of their meal and receive an editable nutritional breakdown.
 
 ## Features
 
