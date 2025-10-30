@@ -38,8 +38,8 @@ MealCam is a mobile web application that simplifies nutritional tracking by allo
 
 1. Clone the repository
 ```bash
-git clone <repository-url>
-cd BiteMe
+git clone https://github.com/RohitVarmaSixtyFive/MealCam.git
+cd MealCam
 ```
 
 2. Install dependencies
